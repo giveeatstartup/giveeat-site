@@ -50,6 +50,22 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:30px 15px}
 <section id="app-section" hidden>
 <div class="welcome"><div><h1 id="heading">GiveEat dashboard</h1><p id="subheading">Connect surplus food with local associations in Safi.</p></div><span class="tag">Safi, Morocco</span></div>
 <div class="notice" id="app-message">Your account is connected to GiveEat.</div>
+
+<section class="panel" style="margin-bottom:18px">
+  <div class="donation-head"><div><h2>Organization profile</h2><p>Keep your contact information up to date so partners can identify and contact your organization.</p></div></div>
+  <form id="profile-form" style="margin-top:16px">
+    <div class="profile-fields" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:11px">
+      <div class="field"><label for="profile-org">Organization name</label><input id="profile-org" maxlength="100" required></div>
+      <div class="field"><label for="profile-name">Contact person's name</label><input id="profile-name" maxlength="80"></div>
+      <div class="field"><label for="profile-phone">Phone number</label><input id="profile-phone" type="tel" maxlength="30" placeholder="+212 …"></div>
+      <div class="field"><label for="profile-city">City</label><input id="profile-city" maxlength="80" placeholder="e.g. Safi"></div>
+      <div class="field" style="grid-column:1/-1"><label for="profile-address">Address</label><input id="profile-address" maxlength="200" placeholder="Street, neighborhood…"></div>
+      <div class="field" style="grid-column:1/-1"><label for="profile-description">About your organization</label><textarea id="profile-description" maxlength="500" placeholder="Briefly describe your business or association…"></textarea></div>
+    </div>
+    <div class="actions"><button class="btn orange" id="profile-save" type="submit">Save profile</button></div>
+  </form>
+</section>
+
 <section class="stats" aria-label="Impact summary">
 <div class="stat"><small>Available donations</small><strong id="available">0</strong></div>
 <div class="stat"><small>Reserved donations</small><strong id="reserved">0</strong></div>
@@ -139,9 +155,15 @@ $('logout-btn').addEventListener('click', async () => {
 
 async function loadDashboard(user) {
   currentUser = user;
-  const { data: profile, error } = await supabase.from('profiles').select('full_name, organization_name, role').eq('id', user.id).single();
+  const { data: profile, error } = await supabase.from('profiles').select('full_name, organization_name, role, phone, city, address, description').eq('id', user.id).single();
   if (error) throw error;
   currentProfile = profile;
+  $('profile-org').value = profile.organization_name || '';
+  $('profile-name').value = profile.full_name || '';
+  $('profile-phone').value = profile.phone || '';
+  $('profile-city').value = profile.city || '';
+  $('profile-address').value = profile.address || '';
+  $('profile-description').value = profile.description || '';
   $('auth-section').hidden = true;
   $('app-section').hidden = false;
   $('account-bar').hidden = false;
@@ -352,6 +374,34 @@ $('history-view-btn').addEventListener('click', async () => {
   donationView = 'history';
   try { await loadDonations(); }
   catch (err) { showMessage('app-message', err.message || 'Could not load donation history.', true); }
+});
+
+$('profile-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const saveButton = $('profile-save');
+  saveButton.disabled = true;
+  saveButton.textContent = 'Saving…';
+  try {
+    const updates = {
+      organization_name: $('profile-org').value.trim(),
+      full_name: $('profile-name').value.trim() || null,
+      phone: $('profile-phone').value.trim() || null,
+      city: $('profile-city').value.trim() || null,
+      address: $('profile-address').value.trim() || null,
+      description: $('profile-description').value.trim() || null
+    };
+    const { error } = await supabase.from('profiles').update(updates).eq('id', currentUser.id);
+    if (error) throw error;
+    currentProfile = { ...currentProfile, ...updates };
+    $('account-label').textContent = (updates.organization_name || updates.full_name || currentUser.email) + ' · ' + currentProfile.role;
+    if (currentProfile.role === 'business') $('business').value = updates.organization_name;
+    showMessage('app-message', 'Your organization profile has been updated.');
+  } catch (err) {
+    showMessage('app-message', err.message || 'Could not save your profile.', true);
+  } finally {
+    saveButton.disabled = false;
+    saveButton.textContent = 'Save profile';
+  }
 });
 
 $('donation-form').addEventListener('submit', async e => {
