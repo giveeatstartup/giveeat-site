@@ -32,3 +32,12 @@ with check (
   association_id = (select auth.uid())
   and status = 'cancelled'
 );
+
+-- Associations need to know which donations already have an active reservation
+-- so they do not see those donations as available.
+drop policy if exists "Authenticated users can view active reservation rows" on public.reservations;
+create policy "Authenticated users can view active reservation rows"
+on public.reservations
+for select
+to authenticated
+using (status = 'reserved');
