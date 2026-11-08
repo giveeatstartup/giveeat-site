@@ -177,7 +177,13 @@ async function loadDonations() {
       .eq('association_id', currentUser.id);
     if (reservationError) throw reservationError;
     const donationIds = [...new Set((myReservations || []).map(r => r.donation_id))];
-    window.giveEatMyReservationStatuses = Object.fromEntries((myReservations || []).map(r => [r.donation_id, r.status]));
+    const reservationStatuses = {};
+    (myReservations || []).forEach(r => {
+      if (r.status === 'reserved' || !reservationStatuses[r.donation_id]) {
+        reservationStatuses[r.donation_id] = r.status;
+      }
+    });
+    window.giveEatMyReservationStatuses = reservationStatuses;
     if (donationIds.length) {
       const { data, error } = await supabase.from('donations').select('*').in('id', donationIds).order('created_at', { ascending: false });
       if (error) throw error;
