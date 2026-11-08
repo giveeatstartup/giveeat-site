@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>GiveEat – surplus food to the people who need it, in Safi</title>
+<meta name="description" content="GiveEat connects restaurants, bakeries, hotels and supermarkets in Safi with charities that can redistribute surplus food.">
+<!-- DRAFT LEGAL TEXT: have a Moroccan lawyer review the policies, and fill in the highlighted "to be added" fields, before launch. -->
+<style>
+:root{
+  --bg:#f3f7ee; --surface:#ffffff; --ink:#1a2a1c; --muted:#56655a; --line:#d5dfcc;
+  --leaf:#3f8f1f; --leaf-d:#2f6e16; --orange:#e8671a; --orange-d:#c7520d; --tint:#e4efd8; --go-hover-text:#ffffff;
+  --head:"Bricolage Grotesque","Trebuchet MS",system-ui,sans-serif; --body:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#121a13; --surface:#1a251c; --ink:#eaf1e4; --muted:#a2b2a5; --line:#2c3b2e; --leaf:#74c04a; --leaf-d:#8fd465; --orange:#ff8a45; --orange-d:#ffa06a; --tint:#223024; --go-hover-text:#1a0c02; color-scheme:dark;}}
+:root[data-theme="dark"]{--bg:#121a13; --surface:#1a251c; --ink:#eaf1e4; --muted:#a2b2a5; --line:#2c3b2e; --leaf:#74c04a; --leaf-d:#8fd465; --orange:#ff8a45; --orange-d:#ffa06a; --tint:#223024; --go-hover-text:#1a0c02; color-scheme:dark;}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:calc(env(safe-area-inset-top,0px) + 120px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 17px/1.6 var(--body);-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--bg);z-index:30}
+a{color:inherit}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+h1,h2,h3{font-family:var(--head);line-height:1.1;margin:0;letter-spacing:-.02em}
+h1{font-size:clamp(2.6rem,6.4vw,4.6rem);font-weight:800}
+h2{font-size:clamp(1.8rem,3.6vw,2.6rem);font-weight:700}
+h3{font-size:1.25rem;font-weight:700}
+p{margin:0 0 1em;max-width:62ch}
+.skip{position:absolute;left:-999px;top:8px;background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;z-index:50}
+.skip:focus{left:12px}
+.logo{font:800 1.45rem/1 var(--head);letter-spacing:-.01em;text-decoration:none}
+.logo b{color:var(--leaf-d);font-weight:800}.logo i{color:var(--orange-d);font-style:normal}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);border-bottom:1px solid var(--line)}
+header .wrap{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px 16px;min-height:64px}
+nav{display:flex;gap:22px;font-size:.95rem;font-weight:500}
+nav a{text-decoration:none;color:var(--muted);padding:6px 0}nav a:hover{color:var(--ink);text-decoration:underline}
+.btn{display:inline-block;font:600 1rem/1 var(--body);padding:15px 22px;border-radius:10px;text-decoration:none;border:2px solid transparent;cursor:pointer}
+.btn.go{background:var(--orange);color:#1a0c02}.btn.go:hover{background:var(--orange-d);color:var(--go-hover-text)}
+.btn.alt{border-color:var(--ink);color:var(--ink);background:transparent}.btn.alt:hover{background:var(--ink);color:var(--bg)}
+:focus-visible{outline:3px solid var(--orange);outline-offset:3px}
+.hero{padding:64px 0 72px}
+.hero .wrap{display:grid;grid-template-columns:1.15fr .85fr;gap:56px;align-items:center}
+.hero p.lead{font-size:1.2rem;margin:22px 0 28px;color:var(--muted)}
+.cta{display:flex;flex-wrap:wrap;gap:12px}
+.note{font-size:.9rem;color:var(--muted);margin-top:14px}
+.board{background:var(--surface);border:2px solid var(--ink);border-radius:6px 22px 6px 22px;padding:22px;box-shadow:8px 8px 0 var(--leaf)}
+.board h3{font-size:1rem;margin-bottom:4px}.board small{color:var(--muted);display:block;margin-bottom:14px;font-size:.88rem}
+.slip{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:13px 0;border-top:1px dashed var(--line)}
+.slip strong{display:block;font-size:.98rem}.slip span{font-size:.88rem;color:var(--muted)}
+.slip button{font:600 .88rem var(--body);padding:9px 14px;border-radius:8px;border:2px solid var(--leaf-d);background:transparent;color:var(--leaf-d);cursor:pointer;white-space:nowrap}
+.slip button:hover{background:var(--leaf-d);color:var(--surface)}
+.slip.done button{background:var(--tint);border-color:var(--tint);color:var(--muted);cursor:default}
+.slip.done strong{text-decoration:line-through;text-decoration-thickness:1px}
+section{padding:72px 0}
+.why{background:var(--tint)}
+.why .wrap{display:grid;grid-template-columns:1fr 1.3fr;gap:56px}
+.who{display:grid;grid-template-columns:1.4fr 1fr;gap:20px;margin-top:40px}
+.who>div{padding:28px;border-radius:14px;background:var(--surface);border:1px solid var(--line)}
+.who>div:first-child{border-left:6px solid var(--orange)}.who>div:last-child{border-left:6px solid var(--leaf)}
+.who ul{margin:12px 0 0;padding-left:1.1em;color:var(--muted)}.who li{margin:6px 0}
+dl{margin:36px 0 0;display:grid;grid-template-columns:minmax(150px,.5fr) 1.5fr;gap:0 40px}
+dt{font:700 1.1rem var(--head);padding:20px 0;border-top:1px solid var(--line)}
+dd{margin:0;padding:20px 0;border-top:1px solid var(--line);color:var(--muted)}
+.plans{display:grid;grid-template-columns:1fr 1.15fr 1fr;gap:16px;margin-top:36px;align-items:end}
+.plan{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:26px}
+.plan.mid{border:2px solid var(--leaf-d);padding-top:34px;padding-bottom:34px}
+.plan .price{font:800 2.3rem/1 var(--head);margin:10px 0 4px}.plan .price small{font:500 .95rem var(--body);color:var(--muted)}
+.plan p{font-size:.95rem;color:var(--muted);margin:10px 0 0}
+.road{margin-top:34px;border-left:3px solid var(--leaf-d);padding-left:26px;display:grid;gap:26px}
+.road h3{margin-bottom:6px}.road p{margin:0;color:var(--muted)}
+.get{background:#1a2a1c;color:#f3f7ee}
+.get h2{color:#f3f7ee}.get p{color:#c9d6c5}
+.get .btn.alt{border-color:#f3f7ee;color:#f3f7ee}.get .btn.alt:hover{background:#f3f7ee;color:#1a2a1c}
+.team{display:grid;grid-template-columns:repeat(3,1fr);gap:8px 32px;margin:30px 0 0;padding:0;list-style:none}
+.team li{padding:14px 0;border-top:1px solid var(--line);font-weight:500}
+.team li span{display:block;font-weight:400;font-size:.9rem;color:var(--muted)}
+.legal{background:var(--surface);border-top:1px solid var(--line)}
+.legal .toc{display:flex;flex-wrap:wrap;gap:8px 22px;margin:18px 0 8px;font-weight:600}
+.legal article{max-width:70ch;padding-top:44px}
+.legal h3{font-size:1.5rem;margin-bottom:6px}
+.legal h4{font:700 1.05rem var(--head);margin:22px 0 6px}
+.legal p,.legal li{color:var(--ink)}.legal ul{padding-left:1.2em;margin:0 0 1em}
+.legal .date{color:var(--muted);font-size:.9rem}
+mark.todo{background:#ffe08a;color:#3a2a00;padding:0 5px;border-radius:3px}
+footer{border-top:1px solid var(--line);padding:30px 0 40px;font-size:.92rem;color:var(--muted)}
+footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px 24px}
+footer .links{display:flex;flex-wrap:wrap;gap:6px 18px}
+footer a,footer button.lk{color:var(--muted);background:none;border:0;font:inherit;padding:0;text-decoration:underline;cursor:pointer}
+footer .logo{font-size:1.2rem}
+.cc{position:fixed;left:0;right:0;bottom:env(safe-area-inset-bottom,0px);z-index:40;background:var(--surface);border-top:2px solid var(--ink);padding:18px 0}
+.cc[hidden]{display:none}
+.cc .wrap{display:flex;gap:16px 28px;align-items:center;flex-wrap:wrap}
+.cc p{margin:0;flex:1 1 340px;font-size:.95rem}
+.cc .row{display:flex;gap:10px}
+.cc .btn{padding:12px 18px;font-size:.95rem;border-color:var(--ink);background:transparent;color:var(--ink)}
+.cc .btn:hover{background:var(--ink);color:var(--bg)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+@media (max-width:860px){
+  .hero .wrap,.why .wrap,.who,.plans,dl{grid-template-columns:1fr}
+  header .wrap{padding-top:8px;padding-bottom:8px}
+  nav{order:3;width:100%;overflow-x:auto;gap:18px;padding-bottom:4px}
+  dl{gap:0}dt{padding-bottom:0;border-bottom:0}dd{border-top:0;padding-top:6px}
+  .team{grid-template-columns:1fr 1fr}.plans{align-items:stretch}
+}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header><div class="wrap">
+  <a class="logo" href="#top" aria-label="GiveEat, back to top"><b>Give</b><i>Eat</i></a>
+  <nav aria-label="Main"><a href="#why">Why we exist</a><a href="#platform">The platform</a><a href="#plans">Plans</a><a href="#team">Team</a><a href="#legal">Legal</a></nav>
+  <a class="btn go" href="#get" style="padding:11px 16px;font-size:.92rem">Get the app</a>
+</div></header>
+
+<main id="main" tabindex="-1">
+<div class="hero" id="top"><div class="wrap">
+  <div>
+    <h1>Good food shouldn’t end up in the bin.</h1>
+    <p class="lead">Every day, restaurants, bakeries and hotels in Safi throw away food that is still perfectly good. GiveEat lets them post it in minutes, so a local charity can come and collect it while it’s fresh.</p>
+    <div class="cta">
+      <a class="btn go" href="https://giveeat.edgeone.app/GiveEat.html">Open the web app</a>
+      <a class="btn alt" href="GiveEat.apk" download>Download for Android</a>
+    </div>
+    <p class="note">Built in Safi, Morocco.</p>
+  </div>
+  <aside class="board" aria-label="Example of the donation board">
+    <h3>Today’s board</h3>
+    <small>An example of what associations see. Try claiming one.</small>
+    <div class="slip"><div><strong>Unsold bread and pastries</strong><span>Bakery · pick up before closing</span></div><button type="button">Claim</button></div>
+    <div class="slip"><div><strong>Cooked meals from lunch service</strong><span>Restaurant · about 20 portions</span></div><button type="button">Claim</button></div>
+    <div class="slip"><div><strong>Fruit and vegetables near date</strong><span>Supermarket · crates, still fresh</span></div><button type="button">Claim</button></div>
+    <div class="sr" id="live" aria-live="polite"></div>
+  </aside>
+</div></div>
+
+<section class="why" id="why"><div class="wrap">
+  <h2>Food is wasted on one side of town while families go without on the other.</h2>
+  <div>
+    <p>Businesses usually do want to give their surplus away. What they lack is a quick way to do it. Associations have the same problem from the other direction: they’d take the food, but they find out too late, or not at all.</p>
+    <p>GiveEat puts both sides on one screen. The business reports what’s left, the association sees it straight away, reserves it, and organises the pickup.</p>
+    <p>Our goal is to become the go-to way to redistribute food in Morocco, starting here in Safi.</p>
+  </div>
+</div></section>
+
+<section id="platform"><div class="wrap">
+  <h2>What’s in the platform</h2>
+  <div class="who">
+    <div>
+      <h3>If you run a food business</h3>
+      <ul><li>Restaurants, hotels, bakeries, supermarkets, cafés and food stores</li><li>Post your surplus in real time</li><li>Get a report of your contribution</li></ul>
+    </div>
+    <div>
+      <h3>If you’re an association</h3>
+      <ul><li>See offers as they appear</li><li>Reserve and plan the pickup</li></ul>
+    </div>
+  </div>
+  <dl>
+    <dt>Food donation board</dt><dd>Businesses publish available surplus food as soon as they know about it.</dd>
+    <dt>Association dashboard</dt><dd>Associations browse offers, reserve donations and organise collection.</dd>
+    <dt>Impact tracking</dt><dd>We keep count of the food redistributed and the number of people who received meals.</dd>
+    <dt>Reports for businesses</dt><dd>A record of your environmental and social contribution.</dd>
+  </dl>
+</div></section>
+
+<section id="plans" style="background:var(--surface);border-block:1px solid var(--line)"><div class="wrap">
+  <h2>Plans for businesses</h2>
+  <p style="margin-top:14px;color:var(--muted)">Monthly subscriptions, priced in Moroccan dirhams (MAD). See the <a href="#terms">terms</a> and <a href="#refunds">refund policy</a>.</p>
+  <div class="plans">
+    <div class="plan"><h3>Basic</h3><div class="price">300 <small>MAD / month</small></div><p>One business account and basic donation management.</p></div>
+    <div class="plan mid"><h3>Standard</h3><div class="price">600 <small>MAD / month</small></div><p>Everything in Basic, plus the advanced dashboard, reports and priority support.</p></div>
+    <div class="plan"><h3>Premium</h3><div class="price">1,000 <small>MAD / month</small></div><p>For businesses with several branches: detailed analytics and personal assistance.</p></div>
+  </div>
+</div></section>
+
+<section><div class="wrap">
+  <h2>Where we’re headed</h2>
+  <div class="road">
+    <div><h3>Now</h3><p>Finish a simple, reliable app. Sign our first restaurants and bakeries, and work with associations in Safi.</p></div>
+    <div><h3>Next</h3><p>Keep our partners happy, add features, build a proper pickup network and open in other Moroccan cities.</p></div>
+    <div><h3>Later</h3><p>Use AI to plan collections more efficiently, become the national reference for digital food redistribution, and grow beyond Morocco.</p></div>
+  </div>
+</div></section>
+
+<section class="get" id="get"><div class="wrap">
+  <h2>Get GiveEat</h2>
+  <p style="margin-top:14px">Use it in your browser, or install it on an Android phone.</p>
+  <div class="cta" style="margin-top:22px">
+    <a class="btn go" href="https://giveeat.edgeone.app/GiveEat.html">Open the web app</a>
+    <a class="btn alt" href="GiveEat.apk" download>Download the Android app (APK)</a>
+  </div>
+</div></section>
+
+<section id="team"><div class="wrap">
+  <h2>The people behind it</h2>
+  <p style="margin-top:14px;color:var(--muted)">GiveEat was started in Safi by Meryem Jelouani, who manages the company. The team shares one goal: getting good food to the people who need it.</p>
+  <ul class="team">
+    <li>Meryem Jelouani<span>Founder and manager</span></li>
+    <li>Issam Berechid</li><li>Mohammed Ech-Chadily</li>
+  </ul>
+</div></section>
+
+<section class="legal" id="legal"><div class="wrap">
+  <h2>Legal</h2>
+  <nav class="toc" aria-label="Legal pages"><a href="#business">Business details</a><a href="#privacy">Privacy policy</a><a href="#terms">Terms of service</a><a href="#refunds">Refund policy</a><a href="#cookies">Cookie policy</a></nav>
+
+  <article id="business">
+    <h3>Business details</h3>
+    <dl style="margin-top:14px;grid-template-columns:minmax(150px,.6fr) 1.4fr">
+      <dt>Name</dt><dd>GiveEat</dd>
+      <dt>Based in</dt><dd>Safi, Morocco</dd>
+      <dt>Manager</dt><dd>Meryem Jelouani</dd>
+      
+      <dt>Contact email</dt><dd><a href="mailto:giveeatstartup@gmail.com">giveeatstartup@gmail.com</a></dd>
+      <dt>Postal address</dt><dd>Safi 46000, Morocco</dd>
+    </dl>
+  </article>
+
+  <article id="privacy">
+    <h3>Privacy policy</h3>
+    <p class="date">Last updated 8 November 2026</p>
+    <p>This policy explains what personal data GiveEat handles and what your rights are. We follow Moroccan Law 09-08 on the protection of personal data and, where the law requires it, we notify the CNDP or ask for its authorisation before processing.</p>
+    <h4>This website</h4>
+    <p>The website has no accounts, no forms, no analytics and no advertising. We don’t ask you for any personal data here. Our hosting provider may keep standard server logs (such as your IP address and browser type) for security and to keep the site running.</p>
+    <p>If you choose “Allow Google Fonts” in the cookie banner, your browser loads our typefaces from Google, which receives your IP address. If you decline, the site uses fonts already on your device.</p>
+    <h4>The GiveEat app and web app</h4>
+    <p>To run the service, we process the details businesses and associations give us when they sign up and use it: names, contact details, the surplus-food listings they post, reservations and pickups, and notifications. We use this only to connect donors with associations, to show impact figures, and to support our users. We don’t sell personal data.</p>
+    <p>The Android app includes third-party software components: Google services for push notifications and a Meta (Facebook) software kit. These may receive technical information from your device, under their own privacy policies.</p>
+    <h4>How long we keep data</h4>
+    <p>We keep account data while your account is active. After that, we delete it, except what the law requires us to keep (for example, invoices).</p>
+    <h4>Your rights, including deletion</h4>
+    <p>You can ask us to give you access to your data, correct it, stop using it, or delete it. To request deletion, email us at <a href="mailto:giveeatstartup@gmail.com?subject=Delete%20my%20data">giveeatstartup@gmail.com</a> with the subject “Delete my data”, from the address linked to your account. We reply within 30 days. If you’re unhappy with our answer, you can complain to the CNDP (<a href="https://www.cndp.ma">cndp.ma</a>).</p>
+    <h4>Children</h4>
+    <p>GiveEat is for businesses and associations and is not meant for anyone under 18. We don’t knowingly collect data from children. If you think a child has given us data, contact us and we’ll delete it.</p>
+    <h4>Emails</h4>
+    <p>We don’t send marketing emails. If that ever changes, we’ll ask for your permission first and every email will have an unsubscribe link.</p>
+    <h4>Changes</h4>
+    <p>If we change this policy, we’ll update the date above.</p>
+  </article>
+
+  <article id="terms">
+    <h3>Terms of service</h3>
+    <p class="date">Last updated 8 November 2026</p>
+    <ul>
+      <li><b>What we do.</b> GiveEat is a platform that connects food businesses that have surplus food with associations that can redistribute it. We don’t prepare, store or transport the food.</li>
+      <li><b>Food safety.</b> Businesses must only offer food that is safe to eat and must follow food hygiene rules. Associations are responsible for how they store and hand out what they collect.</li>
+      <li><b>Your account.</b> Give accurate information, keep your login private, and don’t misuse the platform (for example, by posting false offers).</li>
+      <li><b>Prices.</b> Plans are billed monthly in MAD at the prices shown on this site. The price you are shown at sign-up is the price you pay, and any tax or other charge is shown before you confirm.</li>
+      <li><b>Our responsibility.</b> We work to keep the service running, but we can’t promise it will never be interrupted, or that every offer will be collected.</li>
+      <li><b>Law.</b> These terms are governed by Moroccan law.</li>
+    </ul>
+  </article>
+
+  <article id="refunds">
+    <h3>Refund policy</h3>
+    <p class="date">Last updated 8 November 2026</p>
+    <ul>
+      <li>You can cancel a monthly plan at any time. It stays active until the end of the month you’ve paid for, and then stops.</li>
+      <li>If we charge you by mistake, or you were charged and couldn’t use the service because of a fault on our side, contact us within 14 days and we’ll refund the amount affected.</li>
+      <li>Otherwise, payments for a month already used are not refunded.</li>
+      <li>Refunds go back to the original payment method.</li>
+    </ul>
+    <p>To ask for a refund, email <a href="mailto:giveeatstartup@gmail.com?subject=Refund%20request">giveeatstartup@gmail.com</a> with your account name and the date of the payment.</p>
+  </article>
+
+  <article id="cookies">
+    <h3>Cookie policy</h3>
+    <p class="date">Last updated 8 November 2026</p>
+    <p>This website doesn’t set tracking, analytics or advertising cookies. It uses only:</p>
+    <ul>
+      <li><b>Your cookie choice.</b> Saved in your browser’s local storage so we don’t ask again. It never leaves your device.</li>
+      <li><b>Google Fonts (only if you allow it).</b> Loads our typefaces from Google’s servers.</li>
+    </ul>
+    <p>You can change your choice at any time with “Cookie settings” in the footer. The typefaces, Bricolage Grotesque and Figtree, are free to use under the SIL Open Font License.</p>
+  </article>
+</div></section>
+</main>
+
+<footer><div class="wrap">
+  <span><a class="logo" href="#top" style="text-decoration:none"><b>Give</b><i>Eat</i></a> · Safi, Morocco · © 2026 GiveEat</span>
+  <span class="links"><a href="#privacy">Privacy</a><a href="#terms">Terms</a><a href="#refunds">Refunds</a><a href="#cookies">Cookies</a><button type="button" class="lk" id="cc-open">Cookie settings</button></span>
+</div></footer>
+
+<div class="cc" id="cc" role="region" aria-label="Cookie choices" hidden>
+  <div class="wrap">
+    <p>This site doesn’t track you. It can load its typefaces from Google Fonts, which shares your IP address with Google. Do you allow that? You can change your mind later. <a href="#cookies">Cookie policy</a></p>
+    <div class="row"><button type="button" class="btn" id="cc-no">No, use system fonts</button><button type="button" class="btn" id="cc-yes">Allow Google Fonts</button></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var KEY='giveeat-fonts',cc=document.getElementById('cc');
+  function read(){try{return localStorage.getItem(KEY)}catch(e){return null}}
+  function save(v){try{localStorage.setItem(KEY,v)}catch(e){}}
+  function fonts(on){
+    var el=document.getElementById('gf');
+    if(on&&!el){el=document.createElement('link');el.id='gf';el.rel='stylesheet';
+      el.href='https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Figtree:wght@400;500;600&display=swap';document.head.appendChild(el);}
+    if(!on&&el)el.remove();
+  }
+  var c=read(); if(c==='yes')fonts(true); else if(c!=='no')cc.hidden=false;
+  document.getElementById('cc-yes').onclick=function(){save('yes');fonts(true);cc.hidden=true};
+  document.getElementById('cc-no').onclick=function(){save('no');fonts(false);cc.hidden=true};
+  document.getElementById('cc-open').onclick=function(){cc.hidden=false;document.getElementById('cc-no').focus()};
+  document.querySelectorAll('.slip button').forEach(function(b){
+    b.addEventListener('click',function(){
+      var s=b.closest('.slip'); if(s.classList.contains('done'))return;
+      s.classList.add('done'); b.textContent='Claimed';
+      document.getElementById('live').textContent=s.querySelector('strong').textContent+' claimed.';
+    });
+  });
+})();
+</script>
+</body>
+</html>
