@@ -108,7 +108,7 @@ $('auth-form').addEventListener('submit', async e => {
       const role = $('account-role').value;
       const { data, error } = await supabase.auth.signUp({
         email, password,
-        options: { data: { role, full_name: $('full-name').value.trim(), organization_name: $('org-name').value.trim() } }
+        options: { emailRedirectTo: window.location.href, data: { role, full_name: $('full-name').value.trim(), organization_name: $('org-name').value.trim() } }
       });
       if (error) throw error;
       if (data.session) {
