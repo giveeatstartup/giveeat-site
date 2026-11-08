@@ -274,6 +274,60 @@ async function loadDonations() {
       });
       actions.append(btn);
     }
+    if (currentProfile.role === 'business' && item.status === 'available') {
+      const editBtn = document.createElement('button');
+      editBtn.className = 'btn light';
+      editBtn.textContent = 'Edit donation';
+      editBtn.addEventListener('click', () => {
+        const existingEditor = card.querySelector('.donation-editor');
+        if (existingEditor) { existingEditor.remove(); editBtn.textContent = 'Edit donation'; return; }
+
+        const editor = document.createElement('form');
+        editor.className = 'donation-editor';
+        editor.style.marginTop = '14px';
+        editor.innerHTML = `
+          <div class="field"><label>Food description</label><input name="description" maxlength="120" required></div>
+          <div class="field"><label>Quantity / portions</label><input name="quantity" maxlength="60" required></div>
+          <div class="field"><label>Pickup deadline</label><input name="pickup_deadline" type="datetime-local" required></div>
+          <div class="field"><label>Notes (optional)</label><textarea name="notes" maxlength="500"></textarea></div>
+          <div class="actions"><button class="btn orange" type="submit">Save changes</button><button class="btn light" type="button">Cancel</button></div>
+        `;
+        editor.elements.description.value = item.description || '';
+        editor.elements.quantity.value = item.quantity || '';
+        editor.elements.notes.value = item.notes || '';
+        const pickupDate = new Date(item.pickup_deadline);
+        const localPickupDate = new Date(pickupDate.getTime() - pickupDate.getTimezoneOffset() * 60000);
+        editor.elements.pickup_deadline.value = localPickupDate.toISOString().slice(0, 16);
+        editor.querySelector('button[type="button"]').addEventListener('click', () => {
+          editor.remove();
+          editBtn.textContent = 'Edit donation';
+        });
+        editor.addEventListener('submit', async event => {
+          event.preventDefault();
+          const saveBtn = editor.querySelector('button[type="submit"]');
+          saveBtn.disabled = true;
+          saveBtn.textContent = 'Saving…';
+          try {
+            const { error: editError } = await supabase.from('donations').update({
+              description: editor.elements.description.value.trim(),
+              quantity: editor.elements.quantity.value.trim(),
+              pickup_deadline: new Date(editor.elements.pickup_deadline.value).toISOString(),
+              notes: editor.elements.notes.value.trim() || null
+            }).eq('id', item.id).eq('business_id', currentUser.id).eq('status', 'available');
+            if (editError) throw editError;
+            showMessage('app-message', 'Donation updated successfully.');
+            await loadDonations();
+          } catch (err) {
+            showMessage('app-message', err.message || 'Could not update donation.', true);
+            saveBtn.disabled = false;
+            saveBtn.textContent = 'Save changes';
+          }
+        });
+        card.append(editor);
+        editBtn.textContent = 'Close editor';
+      });
+      actions.append(editBtn);
+    }
     if (currentProfile.role === 'business' && reservation && item.status !== 'collected') {
       const btn = document.createElement('button'); btn.className = 'btn light'; btn.textContent = 'Mark collected';
       btn.addEventListener('click', async () => {
