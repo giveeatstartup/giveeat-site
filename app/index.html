@@ -10,91 +10,235 @@
 header{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
 .top{max-width:1180px;margin:auto;padding:15px 22px;display:flex;align-items:center;justify-content:space-between;gap:15px}
 .brand{font-weight:900;font-size:23px;color:var(--green);text-decoration:none}.brand span{color:var(--orange)}
-.role{border:1px solid var(--line);background:#f7faf4;border-radius:10px;padding:9px 12px;color:#263527}
 main{max-width:1180px;margin:30px auto;padding:0 22px}.welcome{display:flex;justify-content:space-between;align-items:end;gap:20px;flex-wrap:wrap;margin-bottom:24px}
 h1{font-size:clamp(27px,4vw,38px);margin:0 0 7px;letter-spacing:-1px}h2{font-size:20px;margin:0 0 16px}p{color:var(--muted);margin:0}
 .notice{background:#fff5e9;border:1px solid #f4d4b5;border-radius:12px;padding:12px 15px;margin-bottom:22px;color:#77401b;font-size:14px}
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:24px}.stat,.panel,.donation{background:var(--card);border:1px solid var(--line);border-radius:15px;padding:18px}
 .stat small{display:block;color:var(--muted);font-size:13px}.stat strong{display:block;font-size:27px;margin-top:5px}
 .layout{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(270px,.8fr);gap:18px}
-.donation-list{display:grid;gap:12px}.donation-head{display:flex;justify-content:space-between;gap:10px;align-items:start}.donation h3{margin:0 0 5px;font-size:17px}.meta{font-size:13px;color:var(--muted);line-height:1.7}
+.donation-list{display:grid;gap:12px}.donation-head{display:flex;justify-content:space-between;gap:10px;align-items:start}
+.donation h3{margin:0 0 5px;font-size:17px}.meta{font-size:13px;color:var(--muted);line-height:1.7}
 .tag{display:inline-block;padding:5px 9px;border-radius:99px;background:#e9f3e2;color:#31651e;font-size:12px;font-weight:700;white-space:nowrap}
 .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
 .btn{border:0;border-radius:9px;padding:10px 14px;background:var(--green);color:white;font-weight:650}.btn.orange{background:var(--orange)}.btn.light{background:#eef4e9;color:#294526}.btn:disabled{opacity:.5;cursor:not-allowed}
 form{display:grid;gap:11px}label{font-size:13px;font-weight:650;color:#425044}input,select,textarea{width:100%;padding:10px 11px;border:1px solid var(--line);border-radius:9px;background:#fff;color:#1a2a1c}textarea{min-height:76px;resize:vertical}
 .field{display:grid;gap:5px}.empty{padding:28px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:12px}
+.auth-wrap{max-width:480px;margin:25px auto}.auth-panel{background:#fff;border:1px solid var(--line);border-radius:15px;padding:22px}.auth-panel h2{margin-bottom:7px}.auth-panel>p{margin-bottom:18px}
+.message{font-size:14px;padding:10px 12px;border-radius:9px;background:#eef4e9;color:#294526;margin-top:12px;display:none}.message.error{background:#fff0ed;color:#9c321e}
+.account{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.account span{font-size:13px;color:var(--muted)}
 footer{text-align:center;color:var(--muted);font-size:12px;padding:30px 15px}
-@media(max-width:760px){.layout{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}.top{align-items:flex-start;flex-direction:column}.role{width:100%}}
+@media(max-width:760px){.layout{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}.top{align-items:flex-start;flex-direction:column}}
 </style>
 </head>
 <body>
-<header><div class="top"><a class="brand" href="../">Give<span>Eat</span></a><label>View as <select class="role" id="role"><option value="business">Food business</option><option value="association">Association</option><option value="admin">Administrator (demo)</option></select></label></div></header>
+<header><div class="top"><a class="brand" href="../">Give<span>Eat</span></a><div class="account" id="account-bar" hidden><span id="account-label"></span><button class="btn light" id="logout-btn" type="button">Log out</button></div></div></header>
 <main>
-<div class="welcome"><div><h1 id="heading">Food business dashboard</h1><p id="subheading">Share safe surplus food with local associations in Safi.</p></div><span class="tag">Safi, Morocco</span></div>
-<div class="notice"><strong>Preview version:</strong> this first version stores demo activity in this browser only. Accounts, shared live data, secure sign-in, notifications and production hosting still need a backend connection before public use.</div>
+<section id="auth-section" class="auth-wrap">
+<div class="auth-panel">
+<h2 id="auth-title">Welcome to GiveEat</h2><p id="auth-description">Sign in or create an account to continue.</p>
+<form id="auth-form">
+<div class="field" id="name-field" hidden><label for="full-name">Full name</label><input id="full-name" maxlength="80" autocomplete="name"></div>
+<div class="field" id="org-field" hidden><label for="org-name">Business / association name</label><input id="org-name" maxlength="100"></div>
+<div class="field" id="role-field" hidden><label for="account-role">Account type</label><select id="account-role"><option value="business">Food business</option><option value="association">Association</option></select></div>
+<div class="field"><label for="email">Email</label><input id="email" type="email" required autocomplete="email"></div>
+<div class="field"><label for="password">Password</label><input id="password" type="password" required minlength="6" autocomplete="current-password"></div>
+<button class="btn orange" id="auth-submit" type="submit">Sign in</button>
+</form>
+<div class="message" id="auth-message" role="status"></div>
+<p style="margin-top:16px;font-size:14px"><span id="switch-text">Don't have an account?</span> <a href="#" id="switch-auth">Create one</a></p>
+</div></section>
+<section id="app-section" hidden>
+<div class="welcome"><div><h1 id="heading">GiveEat dashboard</h1><p id="subheading">Connect surplus food with local associations in Safi.</p></div><span class="tag">Safi, Morocco</span></div>
+<div class="notice" id="app-message">Your account is connected to GiveEat.</div>
 <section class="stats" aria-label="Impact summary">
-<div class="stat"><small>Available donations</small><strong id="available">3</strong></div>
+<div class="stat"><small>Available donations</small><strong id="available">0</strong></div>
 <div class="stat"><small>Reserved donations</small><strong id="reserved">0</strong></div>
 <div class="stat"><small>Collected donations</small><strong id="collected">0</strong></div>
 </section>
 <div class="layout">
-<section class="panel"><div class="donation-head"><h2 id="list-title">Recent food donations</h2><span class="meta" id="count-label"></span></div><div class="donation-list" id="donations"></div></section>
+<section class="panel"><div class="donation-head"><h2 id="list-title">Food donations</h2><span class="meta" id="count-label"></span></div><div class="donation-list" id="donations"><div class="empty">Loading donations…</div></div></section>
 <aside class="panel" id="side-panel"><h2 id="form-title">Publish a donation</h2><form id="donation-form">
-<div class="field"><label for="food">Food description</label><input id="food" required maxlength="80" placeholder="e.g. Fresh bread and pastries"></div>
-<div class="field"><label for="quantity">Quantity / portions</label><input id="quantity" required maxlength="40" placeholder="e.g. 20 portions"></div>
+<div class="field"><label for="food">Food description</label><input id="food" required maxlength="120" placeholder="e.g. Fresh bread and pastries"></div>
+<div class="field"><label for="quantity">Quantity / portions</label><input id="quantity" required maxlength="60" placeholder="e.g. 20 portions"></div>
 <div class="field"><label for="pickup">Pickup deadline</label><input id="pickup" type="datetime-local" required></div>
-<div class="field"><label for="business">Business name</label><input id="business" required maxlength="60" placeholder="Your restaurant or shop"></div>
-<div class="field"><label for="notes">Notes (optional)</label><textarea id="notes" maxlength="240" placeholder="Storage, allergens, pickup instructions…"></textarea></div>
+<div class="field"><label for="business">Business name</label><input id="business" required maxlength="100" placeholder="Your restaurant or shop"></div>
+<div class="field"><label for="notes">Notes (optional)</label><textarea id="notes" maxlength="500" placeholder="Storage, allergens, pickup instructions…"></textarea></div>
 <button class="btn orange" type="submit">Publish donation</button>
 </form><div id="side-info" hidden></div></aside>
-</div>
+</div></section>
 </main>
 <footer>GiveEat · Reducing food waste and supporting solidarity in Safi.</footer>
-<script>
-const initial=[
-{id:1,food:"Fresh bread and pastries",quantity:"12 bags",business:"Demo Bakery",pickup:"Today · 18:00",status:"Available",notes:"Collected before closing"},
-{id:2,food:"Cooked lunch meals",quantity:"20 portions",business:"Demo Restaurant",pickup:"Today · 16:30",status:"Available",notes:"Keep refrigerated"},
-{id:3,food:"Seasonal fruit and vegetables",quantity:"3 crates",business:"Demo Market",pickup:"Tomorrow · 10:00",status:"Available",notes:"Good condition"}
-];
-let items;try{items=JSON.parse(localStorage.getItem("giveeat-demo-donations"))||initial}catch(e){items=initial}
-const $=id=>document.getElementById(id);
-function save(){try{localStorage.setItem("giveeat-demo-donations",JSON.stringify(items))}catch(e){}}
-function render(){
-const role=$("role").value;
-$("heading").textContent=role==="business"?"Food business dashboard":role==="association"?"Association dashboard":"Administrator overview";
-$("subheading").textContent=role==="business"?"Share safe surplus food with local associations in Safi.":role==="association"?"Find available food donations and reserve a pickup.":"Review donation activity in this local preview.";
-$("list-title").textContent=role==="business"?"Your donation board":"Available food donations";
-$("form-title").textContent=role==="business"?"Publish a donation":"Donation activity";
-$("donation-form").hidden=role!=="business";
-$("side-info").hidden=role==="business";
-$("side-info").textContent=role==="association"?"Select an available donation and reserve it for collection.": "Administrator controls and user management will be added when the secure backend is connected.";
-$("side-info").style.color="#647064";
-$("available").textContent=items.filter(x=>x.status==="Available").length;
-$("reserved").textContent=items.filter(x=>x.status==="Reserved").length;
-$("collected").textContent=items.filter(x=>x.status==="Collected").length;
-$("count-label").textContent=items.length+" total";
-const visible=role==="business"?items:items.filter(x=>x.status==="Available"||role==="admin");
-$("donations").innerHTML="";
-if(!visible.length){$("donations").innerHTML='<div class="empty">No donations to display yet.</div>';return}
-visible.forEach(x=>{
-const card=document.createElement("article");card.className="donation";
-const head=document.createElement("div");head.className="donation-head";
-const left=document.createElement("div");const h=document.createElement("h3");h.textContent=x.food;const meta=document.createElement("div");meta.className="meta";meta.textContent=x.business+" · "+x.quantity+" · Pickup: "+x.pickup;left.append(h,meta);
-const tag=document.createElement("span");tag.className="tag";tag.textContent=x.status;head.append(left,tag);card.append(head);
-if(x.notes){const n=document.createElement("p");n.className="meta";n.style.marginTop="8px";n.textContent=x.notes;card.append(n)}
-const actions=document.createElement("div");actions.className="actions";
-if(role==="association"&&x.status==="Available"){const b=document.createElement("button");b.className="btn";b.textContent="Reserve pickup";b.onclick=()=>{x.status="Reserved";save();render()};actions.append(b)}
-if(role==="business"&&x.status==="Available"){const b=document.createElement("button");b.className="btn light";b.textContent="Mark collected";b.onclick=()=>{x.status="Collected";save();render()};actions.append(b)}
-if(role==="admin"){const b=document.createElement("button");b.className="btn light";b.textContent="Reset status";b.onclick=()=>{x.status="Available";save();render()};actions.append(b)}
-if(actions.children.length)card.append(actions);$("donations").append(card);
-});
+<script type="module">
+import { supabase } from './supabase.js';
+
+const $ = id => document.getElementById(id);
+let mode = 'login';
+let currentUser = null;
+let currentProfile = null;
+
+function showMessage(id, message, isError=false) {
+  const el = $(id); el.textContent = message; el.classList.toggle('error', isError); el.style.display = 'block';
 }
-$("role").addEventListener("change",render);
-$("donation-form").addEventListener("submit",e=>{
-e.preventDefault();const date=new Date($("pickup").value);const pickup=Number.isNaN(date.getTime())?"To be confirmed":date.toLocaleString();
-items.unshift({id:Date.now(),food:$("food").value.trim(),quantity:$("quantity").value.trim(),business:$("business").value.trim(),pickup,status:"Available",notes:$("notes").value.trim()});
-save();e.target.reset();render();
+function setAuthMode(next) {
+  mode = next;
+  const signup = mode === 'signup';
+  $('auth-title').textContent = signup ? 'Create your GiveEat account' : 'Welcome back';
+  $('auth-description').textContent = signup ? 'Join GiveEat as a food business or an association.' : 'Sign in to access your GiveEat dashboard.';
+  $('name-field').hidden = !signup;
+  $('org-field').hidden = !signup;
+  $('role-field').hidden = !signup;
+  $('full-name').required = signup;
+  $('org-name').required = signup;
+  $('auth-submit').textContent = signup ? 'Create account' : 'Sign in';
+  $('switch-text').textContent = signup ? 'Already have an account?' : "Don't have an account?";
+  $('switch-auth').textContent = signup ? 'Sign in' : 'Create one';
+  $('password').autocomplete = signup ? 'new-password' : 'current-password';
+  $('auth-message').style.display = 'none';
+}
+$('switch-auth').addEventListener('click', e => { e.preventDefault(); setAuthMode(mode === 'login' ? 'signup' : 'login'); });
+
+$('auth-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  $('auth-submit').disabled = true;
+  $('auth-submit').textContent = 'Please wait…';
+  try {
+    const email = $('email').value.trim();
+    const password = $('password').value;
+    if (mode === 'signup') {
+      const role = $('account-role').value;
+      const { data, error } = await supabase.auth.signUp({
+        email, password,
+        options: { data: { role, full_name: $('full-name').value.trim(), organization_name: $('org-name').value.trim() } }
+      });
+      if (error) throw error;
+      if (data.session) {
+        await loadDashboard(data.session.user);
+      } else {
+        showMessage('auth-message', 'Account created. Check your email and click the confirmation link, then return here to sign in.');
+      }
+    } else {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      await loadDashboard(data.user);
+    }
+  } catch (err) {
+    showMessage('auth-message', err.message || 'Something went wrong. Please try again.', true);
+  } finally {
+    $('auth-submit').disabled = false;
+    $('auth-submit').textContent = mode === 'signup' ? 'Create account' : 'Sign in';
+  }
 });
-render();
+
+$('logout-btn').addEventListener('click', async () => {
+  const { error } = await supabase.auth.signOut();
+  if (error) showMessage('app-message', error.message, true);
+  currentUser = null; currentProfile = null;
+  $('app-section').hidden = true; $('auth-section').hidden = false; $('account-bar').hidden = true;
+});
+
+async function loadDashboard(user) {
+  currentUser = user;
+  const { data: profile, error } = await supabase.from('profiles').select('full_name, organization_name, role').eq('id', user.id).single();
+  if (error) throw error;
+  currentProfile = profile;
+  $('auth-section').hidden = true;
+  $('app-section').hidden = false;
+  $('account-bar').hidden = false;
+  $('account-label').textContent = (profile.organization_name || profile.full_name || user.email) + ' · ' + profile.role;
+  const isBusiness = profile.role === 'business';
+  $('heading').textContent = isBusiness ? 'Food business dashboard' : 'Association dashboard';
+  $('subheading').textContent = isBusiness ? 'Share safe surplus food with local associations in Safi.' : 'Discover food donations and reserve pickups for your association.';
+  $('list-title').textContent = isBusiness ? 'Your food donations' : 'Available food donations';
+  $('form-title').textContent = 'Publish a donation';
+  $('donation-form').hidden = !isBusiness;
+  $('side-info').hidden = isBusiness;
+  $('side-info').textContent = 'Browse available donations and reserve food for collection.';
+  if (isBusiness && profile.organization_name) $('business').value = profile.organization_name;
+  await loadDonations();
+}
+
+async function loadDonations() {
+  $('donations').innerHTML = '<div class="empty">Loading donations…</div>';
+  let query = supabase.from('donations').select('*').order('created_at', { ascending: false });
+  if (currentProfile.role === 'business') query = query.eq('business_id', currentUser.id);
+  else query = query.eq('status', 'available');
+  const { data, error } = await query;
+  if (error) throw error;
+  const donations = data || [];
+  $('count-label').textContent = donations.length + ' total';
+  $('available').textContent = donations.filter(x => x.status === 'available').length;
+  $('reserved').textContent = donations.filter(x => x.status === 'reserved').length;
+  $('collected').textContent = donations.filter(x => x.status === 'collected').length;
+  $('donations').innerHTML = '';
+  if (!donations.length) { $('donations').innerHTML = '<div class="empty">No donations to display yet.</div>'; return; }
+  donations.forEach(item => {
+    const card = document.createElement('article'); card.className = 'donation';
+    const head = document.createElement('div'); head.className = 'donation-head';
+    const left = document.createElement('div'); const title = document.createElement('h3'); title.textContent = item.description;
+    const meta = document.createElement('div'); meta.className = 'meta';
+    meta.textContent = (item.business_name || 'Food business') + ' · ' + item.quantity + ' · Pickup: ' + new Date(item.pickup_deadline).toLocaleString();
+    left.append(title, meta);
+    const tag = document.createElement('span'); tag.className = 'tag'; tag.textContent = item.status;
+    head.append(left, tag); card.append(head);
+    if (item.notes) { const note = document.createElement('p'); note.className = 'meta'; note.style.marginTop = '8px'; note.textContent = item.notes; card.append(note); }
+    const actions = document.createElement('div'); actions.className = 'actions';
+    if (currentProfile.role === 'association' && item.status === 'available') {
+      const btn = document.createElement('button'); btn.className = 'btn'; btn.textContent = 'Reserve pickup';
+      btn.addEventListener('click', async () => {
+        btn.disabled = true;
+        const { error: reserveError } = await supabase.from('reservations').insert({ donation_id: item.id, association_id: currentUser.id, status: 'reserved' });
+        if (reserveError) { showMessage('app-message', reserveError.message, true); btn.disabled = false; }
+        else { showMessage('app-message', 'Reservation request saved. The donation owner can now see the reservation.'); btn.textContent = 'Reserved'; }
+      });
+      actions.append(btn);
+    }
+    if (currentProfile.role === 'business' && item.status === 'available') {
+      const btn = document.createElement('button'); btn.className = 'btn light'; btn.textContent = 'Mark collected';
+      btn.addEventListener('click', async () => {
+        btn.disabled = true;
+        const { error: updateError } = await supabase.from('donations').update({ status: 'collected' }).eq('id', item.id).eq('business_id', currentUser.id);
+        if (updateError) { showMessage('app-message', updateError.message, true); btn.disabled = false; }
+        else { showMessage('app-message', 'Donation marked as collected.'); await loadDonations(); }
+      });
+      actions.append(btn);
+    }
+    if (actions.children.length) card.append(actions);
+    $('donations').append(card);
+  });
+}
+
+$('donation-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const submit = e.submitter; if (submit) submit.disabled = true;
+  try {
+    const payload = {
+      business_id: currentUser.id,
+      business_name: $('business').value.trim(),
+      description: $('food').value.trim(),
+      quantity: $('quantity').value.trim(),
+      pickup_deadline: new Date($('pickup').value).toISOString(),
+      notes: $('notes').value.trim() || null,
+      status: 'available'
+    };
+    const { error } = await supabase.from('donations').insert(payload);
+    if (error) throw error;
+    e.target.reset();
+    if (currentProfile.organization_name) $('business').value = currentProfile.organization_name;
+    showMessage('app-message', 'Your donation has been published successfully.');
+    await loadDonations();
+  } catch (err) {
+    showMessage('app-message', err.message || 'Could not publish donation.', true);
+  } finally { if (submit) submit.disabled = false; }
+});
+
+const { data: { session } } = await supabase.auth.getSession();
+if (session) {
+  try { await loadDashboard(session.user); }
+  catch (err) { showMessage('auth-message', err.message || 'Could not load your profile. Please sign in again.', true); }
+}
+supabase.auth.onAuthStateChange((_event, session) => {
+  if (!session) { $('app-section').hidden = true; $('auth-section').hidden = false; $('account-bar').hidden = true; }
+});
 </script>
-</body></html>
+</body>
+</html>
