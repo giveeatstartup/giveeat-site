@@ -188,6 +188,7 @@ async function loadDonations() {
     donations = data || [];
   }
   let reservationsByDonation = {};
+  let associationNames = {};
   if (currentProfile.role === 'business' && donations.length) {
     const { data: reservationRows, error: reservationError } = await supabase
       .from('reservations')
@@ -195,6 +196,17 @@ async function loadDonations() {
       .in('donation_id', donations.map(d => d.id));
     if (reservationError) throw reservationError;
     (reservationRows || []).forEach(r => { reservationsByDonation[r.donation_id] = r; });
+    const associationIds = [...new Set((reservationRows || []).map(r => r.association_id))];
+    if (associationIds.length) {
+      const { data: associationProfiles, error: profileError } = await supabase
+        .from('profiles')
+        .select('id, organization_name, full_name')
+        .in('id', associationIds);
+      if (profileError) throw profileError;
+      (associationProfiles || []).forEach(profile => {
+        associationNames[profile.id] = profile.organization_name || profile.full_name || 'Association';
+      });
+    }
   }
   $('count-label').textContent = donations.length + ' total';
   $('available').textContent = donations.filter(x => x.status === 'available').length;
@@ -215,7 +227,7 @@ async function loadDonations() {
     if (currentProfile.role === 'business' && reservation) {
       const reservationInfo = document.createElement('p');
       reservationInfo.className = 'meta'; reservationInfo.style.marginTop = '8px';
-      reservationInfo.textContent = 'Reservation received · Association account: ' + reservation.association_id;
+      reservationInfo.textContent = 'Reserved by: ' + (associationNames[reservation.association_id] || 'Association');
       card.append(reservationInfo);
     }
     if (item.notes) { const note = document.createElement('p'); note.className = 'meta'; note.style.marginTop = '8px'; note.textContent = item.notes; card.append(note); }
