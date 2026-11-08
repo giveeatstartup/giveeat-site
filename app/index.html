@@ -72,7 +72,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:30px 15px}
 <div class="stat"><small>Collected donations</small><strong id="collected">0</strong></div>
 </section>
 <div class="layout">
-<section class="panel"><div class="donation-head"><h2 id="list-title">Food donations</h2><span class="meta" id="count-label"></span></div><div class="actions" id="view-controls" style="margin:0 0 14px"><button class="btn light" id="current-view-btn" type="button">Current donations</button><button class="btn light" id="history-view-btn" type="button">Donation history</button></div><div class="donation-list" id="donations"><div class="empty">Loading donations…</div></div></section>
+<section class="panel"><div class="donation-head"><h2 id="list-title">Food donations</h2><span class="meta" id="count-label"></span></div><div class="actions" id="view-controls" style="margin:0 0 14px"><button class="btn light" id="current-view-btn" type="button">Current donations</button><button class="btn light" id="history-view-btn" type="button">Donation history</button></div><form id="donation-search-form" style="display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;margin:0 0 14px"><input id="donation-search" type="search" placeholder="Search food, business or quantity…" aria-label="Search donations"><button class="btn" type="submit">Search</button><button class="btn light" id="clear-search" type="button">Clear</button></form><div class="donation-list" id="donations"><div class="empty">Loading donations…</div></div></section>
 <aside class="panel" id="side-panel"><h2 id="form-title">Publish a donation</h2><form id="donation-form">
 <div class="field"><label for="food">Food description</label><input id="food" required maxlength="120" placeholder="e.g. Fresh bread and pastries"></div>
 <div class="field"><label for="quantity">Quantity / portions</label><input id="quantity" required maxlength="60" placeholder="e.g. 20 portions"></div>
@@ -92,6 +92,7 @@ let mode = 'login';
 let currentUser = null;
 let currentProfile = null;
 let donationView = 'current';
+let donationSearch = '';
 
 function showMessage(id, message, isError=false) {
   const el = $(id); el.textContent = message; el.classList.toggle('error', isError); el.style.display = 'block';
@@ -284,8 +285,18 @@ async function loadDonations() {
       $('collected').textContent = '0';
     }
   }
+  const allLoadedDonations = donations;
+  if (donationSearch) {
+    const term = donationSearch.toLocaleLowerCase();
+    donations = donations.filter(item => [item.description, item.business_name, item.quantity, item.notes]
+      .some(value => String(value || '').toLocaleLowerCase().includes(term)));
+  }
+  $('count-label').textContent = donationSearch ? donations.length + ' matching' : allLoadedDonations.length + ' total';
   $('donations').innerHTML = '';
-  if (!donations.length) { $('donations').innerHTML = '<div class="empty">No donations to display yet.</div>'; return; }
+  if (!donations.length) {
+    $('donations').innerHTML = '<div class="empty">' + (donationSearch ? 'No donations match your search. Try another word.' : 'No donations to display yet.') + '</div>';
+    return;
+  }
   donations.forEach(item => {
     const card = document.createElement('article'); card.className = 'donation';
     const head = document.createElement('div'); head.className = 'donation-head';
@@ -403,6 +414,19 @@ async function loadDonations() {
     $('donations').append(card);
   });
 }
+
+$('donation-search-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  donationSearch = $('donation-search').value.trim();
+  try { await loadDonations(); }
+  catch (err) { showMessage('app-message', err.message || 'Could not search donations.', true); }
+});
+$('clear-search').addEventListener('click', async () => {
+  $('donation-search').value = '';
+  donationSearch = '';
+  try { await loadDonations(); }
+  catch (err) { showMessage('app-message', err.message || 'Could not load donations.', true); }
+});
 
 $('current-view-btn').addEventListener('click', async () => {
   donationView = 'current';
