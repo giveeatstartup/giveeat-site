@@ -244,9 +244,46 @@ async function loadDonations() {
     }
   }
   $('count-label').textContent = donations.length + ' total';
-  $('available').textContent = donations.filter(x => x.status === 'available').length;
-  $('reserved').textContent = donations.filter(x => x.status === 'reserved').length;
-  $('collected').textContent = donations.filter(x => x.status === 'collected').length;
+
+  // Load dashboard totals independently of the selected list (current/history).
+  if (currentProfile.role === 'business') {
+    $('available').previousElementSibling.textContent = 'Available donations';
+    $('reserved').previousElementSibling.textContent = 'Reserved donations';
+    $('collected').previousElementSibling.textContent = 'Collected donations';
+    const { data: allBusinessDonations, error: totalsError } = await supabase
+      .from('donations').select('status').eq('business_id', currentUser.id);
+    if (totalsError) throw totalsError;
+    const totals = allBusinessDonations || [];
+    $('available').textContent = totals.filter(x => x.status === 'available').length;
+    $('reserved').textContent = totals.filter(x => x.status === 'reserved').length;
+    $('collected').textContent = totals.filter(x => x.status === 'collected').length;
+  } else {
+    $('available').previousElementSibling.textContent = 'Available to reserve';
+    $('reserved').previousElementSibling.textContent = 'My active reservations';
+    $('collected').previousElementSibling.textContent = 'My collected donations';
+    const { data: allAvailable, error: availableError } = await supabase
+      .from('donations').select('id').eq('status', 'available');
+    if (availableError) throw availableError;
+    const { data: activeRows, error: activeRowsError } = await supabase.rpc('get_reserved_donation_ids');
+    if (activeRowsError) throw activeRowsError;
+    const unavailableIds = new Set((activeRows || []).map(x => x.donation_id));
+    $('available').textContent = (allAvailable || []).filter(x => !unavailableIds.has(x.id)).length;
+
+    const { data: myRows, error: myRowsError } = await supabase
+      .from('reservations').select('donation_id, status').eq('association_id', currentUser.id);
+    if (myRowsError) throw myRowsError;
+    const activeDonationIds = [...new Set((myRows || []).filter(x => x.status === 'reserved').map(x => x.donation_id))];
+    const collectedDonationIds = [...new Set((myRows || []).map(x => x.donation_id))];
+    $('reserved').textContent = activeDonationIds.length;
+    if (collectedDonationIds.length) {
+      const { data: myDonations, error: myDonationsError } = await supabase
+        .from('donations').select('id, status').in('id', collectedDonationIds);
+      if (myDonationsError) throw myDonationsError;
+      $('collected').textContent = (myDonations || []).filter(x => x.status === 'collected').length;
+    } else {
+      $('collected').textContent = '0';
+    }
+  }
   $('donations').innerHTML = '';
   if (!donations.length) { $('donations').innerHTML = '<div class="empty">No donations to display yet.</div>'; return; }
   donations.forEach(item => {
