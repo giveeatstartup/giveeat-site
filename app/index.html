@@ -72,9 +72,10 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:30px 15px}
 <div class="stat"><small>Collected donations</small><strong id="collected">0</strong></div>
 </section>
 <div class="layout">
-<section class="panel"><div class="donation-head"><h2 id="list-title">Food donations</h2><span class="meta" id="count-label"></span></div><div class="actions" id="view-controls" style="margin:0 0 14px"><button class="btn light" id="current-view-btn" type="button">Current donations</button><button class="btn light" id="history-view-btn" type="button">Donation history</button></div><form id="donation-search-form" style="display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;margin:0 0 14px"><input id="donation-search" type="search" placeholder="Search food, business or quantity…" aria-label="Search donations"><button class="btn" type="submit">Search</button><button class="btn light" id="clear-search" type="button">Clear</button></form><div class="donation-list" id="donations"><div class="empty">Loading donations…</div></div></section>
+<section class="panel"><div class="donation-head"><h2 id="list-title">Food donations</h2><span class="meta" id="count-label"></span></div><div class="actions" id="view-controls" style="margin:0 0 14px"><button class="btn light" id="current-view-btn" type="button">Current donations</button><button class="btn light" id="history-view-btn" type="button">Donation history</button></div><form id="donation-search-form" style="display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;margin:0 0 10px"><input id="donation-search" type="search" placeholder="Search food, business or quantity…" aria-label="Search donations"><button class="btn" type="submit">Search</button></form><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr)) auto;gap:8px;margin:0 0 14px"><select id="category-filter" aria-label="Filter by food category"><option value="">All food categories</option><option>Bakery</option><option>Fruits &amp; vegetables</option><option>Dairy</option><option>Meat &amp; fish</option><option>Prepared meals</option><option>Groceries</option><option>Other</option></select><select id="deadline-filter" aria-label="Filter by pickup deadline"><option value="">Any pickup deadline</option><option value="24">Within 24 hours</option><option value="72">Within 3 days</option><option value="168">Within 7 days</option></select><button class="btn light" id="clear-filters" type="button">Clear filters</button></div><div class="donation-list" id="donations"><div class="empty">Loading donations…</div></div></section>
 <aside class="panel" id="side-panel"><h2 id="form-title">Publish a donation</h2><form id="donation-form">
 <div class="field"><label for="food">Food description</label><input id="food" required maxlength="120" placeholder="e.g. Fresh bread and pastries"></div>
+<div class="field"><label for="food-category">Food category</label><select id="food-category" required><option value="Bakery">Bakery</option><option value="Fruits & vegetables">Fruits &amp; vegetables</option><option value="Dairy">Dairy</option><option value="Meat & fish">Meat &amp; fish</option><option value="Prepared meals">Prepared meals</option><option value="Groceries">Groceries</option><option value="Other">Other</option></select></div>
 <div class="field"><label for="quantity">Quantity / portions</label><input id="quantity" required maxlength="60" placeholder="e.g. 20 portions"></div>
 <div class="field"><label for="pickup">Pickup deadline</label><input id="pickup" type="datetime-local" required></div>
 <div class="field"><label for="business">Business name</label><input id="business" required maxlength="100" placeholder="Your restaurant or shop"></div>
@@ -93,6 +94,8 @@ let currentUser = null;
 let currentProfile = null;
 let donationView = 'current';
 let donationSearch = '';
+let donationCategory = '';
+let donationDeadlineHours = '';
 
 function showMessage(id, message, isError=false) {
   const el = $(id); el.textContent = message; el.classList.toggle('error', isError); el.style.display = 'block';
@@ -291,10 +294,22 @@ async function loadDonations() {
     donations = donations.filter(item => [item.description, item.business_name, item.quantity, item.notes]
       .some(value => String(value || '').toLocaleLowerCase().includes(term)));
   }
-  $('count-label').textContent = donationSearch ? donations.length + ' matching' : allLoadedDonations.length + ' total';
+  if (donationCategory) {
+    donations = donations.filter(item => (item.category || 'Other') === donationCategory);
+  }
+  if (donationDeadlineHours) {
+    const now = Date.now();
+    const limit = now + Number(donationDeadlineHours) * 60 * 60 * 1000;
+    donations = donations.filter(item => {
+      const deadline = new Date(item.pickup_deadline).getTime();
+      return Number.isFinite(deadline) && deadline >= now && deadline <= limit;
+    });
+  }
+  const filtersActive = Boolean(donationSearch || donationCategory || donationDeadlineHours);
+  $('count-label').textContent = filtersActive ? donations.length + ' matching' : allLoadedDonations.length + ' total';
   $('donations').innerHTML = '';
   if (!donations.length) {
-    $('donations').innerHTML = '<div class="empty">' + (donationSearch ? 'No donations match your search. Try another word.' : 'No donations to display yet.') + '</div>';
+    $('donations').innerHTML = '<div class="empty">' + (filtersActive ? 'No donations match these filters. Try changing or clearing them.' : 'No donations to display yet.') + '</div>';
     return;
   }
   donations.forEach(item => {
@@ -302,7 +317,7 @@ async function loadDonations() {
     const head = document.createElement('div'); head.className = 'donation-head';
     const left = document.createElement('div'); const title = document.createElement('h3'); title.textContent = item.description;
     const meta = document.createElement('div'); meta.className = 'meta';
-    meta.textContent = (item.business_name || 'Food business') + ' · ' + item.quantity + ' · Pickup: ' + new Date(item.pickup_deadline).toLocaleString();
+    meta.textContent = (item.business_name || 'Food business') + ' · ' + (item.category || 'Other') + ' · ' + item.quantity + ' · Pickup: ' + new Date(item.pickup_deadline).toLocaleString();
     left.append(title, meta);
     const reservation = reservationsByDonation[item.id];
     const tag = document.createElement('span'); tag.className = 'tag';
@@ -359,12 +374,14 @@ async function loadDonations() {
         editor.style.marginTop = '14px';
         editor.innerHTML = `
           <div class="field"><label>Food description</label><input name="description" maxlength="120" required></div>
+          <div class="field"><label>Food category</label><select name="category" required><option>Bakery</option><option>Fruits &amp; vegetables</option><option>Dairy</option><option>Meat &amp; fish</option><option>Prepared meals</option><option>Groceries</option><option>Other</option></select></div>
           <div class="field"><label>Quantity / portions</label><input name="quantity" maxlength="60" required></div>
           <div class="field"><label>Pickup deadline</label><input name="pickup_deadline" type="datetime-local" required></div>
           <div class="field"><label>Notes (optional)</label><textarea name="notes" maxlength="500"></textarea></div>
           <div class="actions"><button class="btn orange" type="submit">Save changes</button><button class="btn light" type="button">Cancel</button></div>
         `;
         editor.elements.description.value = item.description || '';
+        editor.elements.category.value = item.category || 'Other';
         editor.elements.quantity.value = item.quantity || '';
         editor.elements.notes.value = item.notes || '';
         const pickupDate = new Date(item.pickup_deadline);
@@ -382,6 +399,7 @@ async function loadDonations() {
           try {
             const { error: editError } = await supabase.from('donations').update({
               description: editor.elements.description.value.trim(),
+              category: editor.elements.category.value,
               quantity: editor.elements.quantity.value.trim(),
               pickup_deadline: new Date(editor.elements.pickup_deadline.value).toISOString(),
               notes: editor.elements.notes.value.trim() || null
@@ -421,11 +439,25 @@ $('donation-search-form').addEventListener('submit', async e => {
   try { await loadDonations(); }
   catch (err) { showMessage('app-message', err.message || 'Could not search donations.', true); }
 });
-$('clear-search').addEventListener('click', async () => {
-  $('donation-search').value = '';
-  donationSearch = '';
+$('category-filter').addEventListener('change', async () => {
+  donationCategory = $('category-filter').value;
   try { await loadDonations(); }
-  catch (err) { showMessage('app-message', err.message || 'Could not load donations.', true); }
+  catch (err) { showMessage('app-message', err.message || 'Could not filter donations.', true); }
+});
+$('deadline-filter').addEventListener('change', async () => {
+  donationDeadlineHours = $('deadline-filter').value;
+  try { await loadDonations(); }
+  catch (err) { showMessage('app-message', err.message || 'Could not filter donations.', true); }
+});
+$('clear-filters').addEventListener('click', async () => {
+  $('donation-search').value = '';
+  $('category-filter').value = '';
+  $('deadline-filter').value = '';
+  donationSearch = '';
+  donationCategory = '';
+  donationDeadlineHours = '';
+  try { await loadDonations(); }
+  catch (err) { showMessage('app-message', err.message || 'Could not clear filters.', true); }
 });
 
 $('current-view-btn').addEventListener('click', async () => {
@@ -475,6 +507,7 @@ $('donation-form').addEventListener('submit', async e => {
       business_id: currentUser.id,
       business_name: $('business').value.trim(),
       description: $('food').value.trim(),
+      category: $('food-category').value,
       quantity: $('quantity').value.trim(),
       pickup_deadline: new Date($('pickup').value).toISOString(),
       notes: $('notes').value.trim() || null,
