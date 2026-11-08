@@ -31,7 +31,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:30px 15px}
 </style>
 </head>
 <body>
-<header><div class="top"><a class="brand" href="../">Give<span>Eat</span></a><div class="account" id="account-bar" hidden><span id="account-label"></span><button class="btn light" id="logout-btn" type="button">Log out</button></div></div></header>
+<header><div class="top"><a class="brand" href="../">Give<span>Eat</span></a><div class="account" id="account-bar" hidden><span id="account-label"></span><button class="btn light" id="notification-toggle" type="button">Notifications <span id="notification-count" class="tag" style="margin-left:5px">0</span></button><button class="btn light" id="logout-btn" type="button">Log out</button></div></div></header>
 <main>
 <section id="auth-section" class="auth-wrap">
 <div class="auth-panel">
@@ -50,6 +50,10 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:30px 15px}
 <section id="app-section" hidden>
 <div class="welcome"><div><h1 id="heading">GiveEat dashboard</h1><p id="subheading">Connect surplus food with local associations in Safi.</p></div><span class="tag">Safi, Morocco</span></div>
 <div class="notice" id="app-message">Your account is connected to GiveEat.</div>
+<section class="panel" id="notifications-panel" style="margin-bottom:18px" hidden>
+  <div class="donation-head"><div><h2>Notifications</h2><p>Updates about donations and reservations.</p></div><button class="btn light" id="mark-all-read" type="button">Mark all as read</button></div>
+  <div class="donation-list" id="notifications-list" style="margin-top:14px"><div class="empty">Loading notifications…</div></div>
+</section>
 
 <section class="panel" style="margin-bottom:18px">
   <div class="donation-head"><div><h2>Organization profile</h2><p>Keep your contact information up to date so partners can identify and contact your organization.</p></div></div>
@@ -185,7 +189,106 @@ async function loadDashboard(user) {
   $('side-info').textContent = 'Browse available donations and reserve food for collection.';
   if (isBusiness && profile.organization_name) $('business').value = profile.organization_name;
   await loadDonations();
+  await loadNotifications();
 }
+
+async function loadNotifications() {
+  const { count, error: countError } = await supabase
+    .from('notifications')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', currentUser.id)
+    .eq('is_read', false);
+  if (countError) throw countError;
+  const unreadCount = count || 0;
+  $('notification-count').textContent = unreadCount > 99 ? '99+' : String(unreadCount);
+  $('notification-count').hidden = unreadCount === 0;
+
+  const { data, error } = await supabase
+    .from('notifications')
+    .select('id, type, title, message, is_read, created_at')
+    .eq('user_id', currentUser.id)
+    .order('created_at', { ascending: false })
+    .limit(20);
+  if (error) throw error;
+
+  const list = $('notifications-list');
+  list.innerHTML = '';
+  if (!data || !data.length) {
+    list.innerHTML = '<div class="empty">You have no notifications yet.</div>';
+    $('mark-all-read').disabled = true;
+    return;
+  }
+  $('mark-all-read').disabled = unreadCount === 0;
+  data.forEach(item => {
+    const card = document.createElement('article');
+    card.className = 'donation';
+    if (!item.is_read) card.style.borderLeft = '4px solid var(--orange)';
+    const head = document.createElement('div');
+    head.className = 'donation-head';
+    const title = document.createElement('h3');
+    title.textContent = item.title;
+    const status = document.createElement('span');
+    status.className = 'tag';
+    status.textContent = item.is_read ? 'Read' : 'New';
+    head.append(title, status);
+    const message = document.createElement('p');
+    message.className = 'meta';
+    message.style.marginTop = '7px';
+    message.textContent = item.message;
+    const date = document.createElement('p');
+    date.className = 'meta';
+    date.style.marginTop = '5px';
+    date.textContent = new Date(item.created_at).toLocaleString();
+    card.append(head, message, date);
+    if (!item.is_read) {
+      const actions = document.createElement('div');
+      actions.className = 'actions';
+      const button = document.createElement('button');
+      button.className = 'btn light';
+      button.type = 'button';
+      button.textContent = 'Mark as read';
+      button.addEventListener('click', async () => {
+        button.disabled = true;
+        const { error: updateError } = await supabase.from('notifications')
+          .update({ is_read: true })
+          .eq('id', item.id)
+          .eq('user_id', currentUser.id);
+        if (updateError) {
+          showMessage('app-message', updateError.message || 'Could not update notification.', true);
+          button.disabled = false;
+          return;
+        }
+        await loadNotifications();
+      });
+      actions.append(button);
+      card.append(actions);
+    }
+    list.append(card);
+  });
+}
+
+$('notification-toggle').addEventListener('click', async () => {
+  $('notifications-panel').hidden = !$('notifications-panel').hidden;
+  if (!$('notifications-panel').hidden) {
+    try { await loadNotifications(); }
+    catch (err) { showMessage('app-message', err.message || 'Could not load notifications.', true); }
+  }
+});
+$('mark-all-read').addEventListener('click', async () => {
+  const button = $('mark-all-read');
+  button.disabled = true;
+  try {
+    const { error } = await supabase.from('notifications')
+      .update({ is_read: true })
+      .eq('user_id', currentUser.id)
+      .eq('is_read', false);
+    if (error) throw error;
+    await loadNotifications();
+  } catch (err) {
+    showMessage('app-message', err.message || 'Could not mark notifications as read.', true);
+    button.disabled = false;
+  }
+});
 
 async function loadDonations() {
   $('donations').innerHTML = '<div class="empty">Loading donations…</div>';
