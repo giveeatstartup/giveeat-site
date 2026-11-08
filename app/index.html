@@ -18,7 +18,7 @@ h1{font-size:clamp(27px,4vw,38px);margin:0 0 7px;letter-spacing:-1px}h2{font-siz
 .layout{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(270px,.8fr);gap:18px}
 .donation-list{display:grid;gap:12px}.donation-head{display:flex;justify-content:space-between;gap:10px;align-items:start}
 .donation h3{margin:0 0 5px;font-size:17px}.meta{font-size:13px;color:var(--muted);line-height:1.7}
-.tag{display:inline-block;padding:5px 9px;border-radius:99px;background:#e9f3e2;color:#31651e;font-size:12px;font-weight:700;white-space:nowrap}
+.tag{display:inline-block;padding:5px 9px;border-radius:99px;background:#e9f3e2;color:#31651e;font-size:12px;font-weight:700;white-space:nowrap}.tag.status-reserved{background:#fff1dc;color:#92520c}.tag.status-collected{background:#e7f0ff;color:#285a9e}.tag.status-cancelled{background:#f1eeee;color:#68616a}.tag.status-available{background:#e9f3e2;color:#31651e}
 .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
 .btn{border:0;border-radius:9px;padding:10px 14px;background:var(--green);color:white;font-weight:650}.btn.orange{background:var(--orange)}.btn.light{background:#eef4e9;color:#294526}.btn:disabled{opacity:.5;cursor:not-allowed}
 form{display:grid;gap:11px}label{font-size:13px;font-weight:650;color:#425044}input,select,textarea{width:100%;padding:10px 11px;border:1px solid var(--line);border-radius:9px;background:#fff;color:#1a2a1c}textarea{min-height:76px;resize:vertical}
@@ -169,7 +169,7 @@ async function loadDashboard(user) {
   $('account-bar').hidden = false;
   $('account-label').textContent = (profile.organization_name || profile.full_name || user.email) + ' · ' + profile.role;
   const isBusiness = profile.role === 'business';
-  $('heading').textContent = isBusiness ? 'Food business dashboard' : 'Association dashboard';
+  $('heading').textContent = 'Welcome, ' + (profile.organization_name || profile.full_name || 'GiveEat partner');
   $('subheading').textContent = isBusiness ? 'Share safe surplus food with local associations in Safi.' : 'Discover food donations and reserve pickups for your association.';
   $('list-title').textContent = isBusiness ? 'Your food donations' : 'Available food donations';
   $('current-view-btn').textContent = isBusiness ? 'All donations' : 'Available donations';
@@ -261,7 +261,9 @@ async function loadDonations() {
     const myReservationStatus = currentProfile.role === 'association' && donationView === 'history'
       ? (window.giveEatMyReservationStatuses || {})[item.id]
       : null;
-    tag.textContent = item.status === 'collected' ? 'collected' : (reservation ? 'reserved' : (myReservationStatus || item.status));
+    const displayStatus = item.status === 'collected' ? 'collected' : (reservation ? 'reserved' : (myReservationStatus || item.status));
+    tag.textContent = displayStatus;
+    tag.classList.add('status-' + String(displayStatus).toLowerCase());
     head.append(left, tag); card.append(head);
     if (currentProfile.role === 'business' && reservation) {
       const reservationInfo = document.createElement('p');
