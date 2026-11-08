@@ -177,6 +177,7 @@ async function loadDonations() {
       .eq('association_id', currentUser.id);
     if (reservationError) throw reservationError;
     const donationIds = [...new Set((myReservations || []).map(r => r.donation_id))];
+    window.giveEatMyReservationStatuses = Object.fromEntries((myReservations || []).map(r => [r.donation_id, r.status]));
     if (donationIds.length) {
       const { data, error } = await supabase.from('donations').select('*').in('id', donationIds).order('created_at', { ascending: false });
       if (error) throw error;
@@ -185,7 +186,14 @@ async function loadDonations() {
   } else {
     const { data, error } = await supabase.from('donations').select('*').eq('status', 'available').order('created_at', { ascending: false });
     if (error) throw error;
-    donations = data || [];
+    const availableDonations = data || [];
+    const { data: activeReservations, error: activeError } = await supabase
+      .from('reservations')
+      .select('donation_id')
+      .eq('status', 'reserved');
+    if (activeError) throw activeError;
+    const reservedIds = new Set((activeReservations || []).map(r => r.donation_id));
+    donations = availableDonations.filter(d => !reservedIds.has(d.id));
   }
   let reservationsByDonation = {};
   let associationNames = {};
@@ -193,7 +201,8 @@ async function loadDonations() {
     const { data: reservationRows, error: reservationError } = await supabase
       .from('reservations')
       .select('donation_id, association_id, status')
-      .in('donation_id', donations.map(d => d.id));
+      .in('donation_id', donations.map(d => d.id))
+      .eq('status', 'reserved');
     if (reservationError) throw reservationError;
     (reservationRows || []).forEach(r => { reservationsByDonation[r.donation_id] = r; });
     const associationIds = [...new Set((reservationRows || []).map(r => r.association_id))];
@@ -222,7 +231,11 @@ async function loadDonations() {
     meta.textContent = (item.business_name || 'Food business') + ' · ' + item.quantity + ' · Pickup: ' + new Date(item.pickup_deadline).toLocaleString();
     left.append(title, meta);
     const reservation = reservationsByDonation[item.id];
-    const tag = document.createElement('span'); tag.className = 'tag'; tag.textContent = reservation ? 'reserved' : item.status;
+    const tag = document.createElement('span'); tag.className = 'tag';
+    const myReservationStatus = currentProfile.role === 'association' && donationView === 'history'
+      ? (window.giveEatMyReservationStatuses || {})[item.id]
+      : null;
+    tag.textContent = item.status === 'collected' ? 'collected' : (reservation ? 'reserved' : (myReservationStatus || item.status));
     head.append(left, tag); card.append(head);
     if (currentProfile.role === 'business' && reservation) {
       const reservationInfo = document.createElement('p');
@@ -238,7 +251,22 @@ async function loadDonations() {
         btn.disabled = true;
         const { error: reserveError } = await supabase.from('reservations').insert({ donation_id: item.id, association_id: currentUser.id, status: 'reserved' });
         if (reserveError) { showMessage('app-message', reserveError.message, true); btn.disabled = false; }
-        else { showMessage('app-message', 'Reservation request saved. The donation owner can now see the reservation.'); btn.textContent = 'Reserved'; }
+        else { showMessage('app-message', 'Reservation saved. You can manage it in My reservation history.'); await loadDonations(); }
+      });
+      actions.append(btn);
+    }
+    if (currentProfile.role === 'association' && donationView === 'history' && myReservationStatus === 'reserved' && item.status !== 'collected') {
+      const btn = document.createElement('button'); btn.className = 'btn light'; btn.textContent = 'Cancel reservation';
+      btn.addEventListener('click', async () => {
+        if (!window.confirm('Cancel this reservation? The donation will become available to other associations.')) return;
+        btn.disabled = true;
+        const { error: cancelError } = await supabase.from('reservations')
+          .update({ status: 'cancelled' })
+          .eq('donation_id', item.id)
+          .eq('association_id', currentUser.id)
+          .eq('status', 'reserved');
+        if (cancelError) { showMessage('app-message', cancelError.message, true); btn.disabled = false; }
+        else { showMessage('app-message', 'Reservation cancelled. The donation is available again.'); await loadDonations(); }
       });
       actions.append(btn);
     }
