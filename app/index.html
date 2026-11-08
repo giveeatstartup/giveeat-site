@@ -274,7 +274,7 @@ async function loadDonations() {
       });
       actions.append(btn);
     }
-    if (currentProfile.role === 'business' && item.status === 'available') {
+    if (currentProfile.role === 'business' && item.status === 'available' && !reservation) {
       const editBtn = document.createElement('button');
       editBtn.className = 'btn light';
       editBtn.textContent = 'Edit donation';
