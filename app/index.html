@@ -194,9 +194,7 @@ async function loadDonations() {
     if (error) throw error;
     const availableDonations = data || [];
     const { data: activeReservations, error: activeError } = await supabase
-      .from('reservations')
-      .select('donation_id')
-      .eq('status', 'reserved');
+      .rpc('get_reserved_donation_ids');
     if (activeError) throw activeError;
     const reservedIds = new Set((activeReservations || []).map(r => r.donation_id));
     donations = availableDonations.filter(d => !reservedIds.has(d.id));
