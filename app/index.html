@@ -56,7 +56,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:30px 15px}
 <div class="stat"><small>Collected donations</small><strong id="collected">0</strong></div>
 </section>
 <div class="layout">
-<section class="panel"><div class="donation-head"><h2 id="list-title">Food donations</h2><span class="meta" id="count-label"></span></div><div class="donation-list" id="donations"><div class="empty">Loading donations…</div></div></section>
+<section class="panel"><div class="donation-head"><h2 id="list-title">Food donations</h2><span class="meta" id="count-label"></span></div><div class="actions" id="view-controls" style="margin:0 0 14px"><button class="btn light" id="current-view-btn" type="button">Current donations</button><button class="btn light" id="history-view-btn" type="button">Donation history</button></div><div class="donation-list" id="donations"><div class="empty">Loading donations…</div></div></section>
 <aside class="panel" id="side-panel"><h2 id="form-title">Publish a donation</h2><form id="donation-form">
 <div class="field"><label for="food">Food description</label><input id="food" required maxlength="120" placeholder="e.g. Fresh bread and pastries"></div>
 <div class="field"><label for="quantity">Quantity / portions</label><input id="quantity" required maxlength="60" placeholder="e.g. 20 portions"></div>
@@ -75,6 +75,7 @@ const $ = id => document.getElementById(id);
 let mode = 'login';
 let currentUser = null;
 let currentProfile = null;
+let donationView = 'current';
 
 function showMessage(id, message, isError=false) {
   const el = $(id); el.textContent = message; el.classList.toggle('error', isError); el.style.display = 'block';
@@ -149,6 +150,9 @@ async function loadDashboard(user) {
   $('heading').textContent = isBusiness ? 'Food business dashboard' : 'Association dashboard';
   $('subheading').textContent = isBusiness ? 'Share safe surplus food with local associations in Safi.' : 'Discover food donations and reserve pickups for your association.';
   $('list-title').textContent = isBusiness ? 'Your food donations' : 'Available food donations';
+  $('current-view-btn').textContent = isBusiness ? 'All donations' : 'Available donations';
+  $('history-view-btn').textContent = isBusiness ? 'Collected history' : 'My reservation history';
+  donationView = 'current';
   $('form-title').textContent = 'Publish a donation';
   $('donation-form').hidden = !isBusiness;
   $('side-info').hidden = isBusiness;
@@ -159,12 +163,30 @@ async function loadDashboard(user) {
 
 async function loadDonations() {
   $('donations').innerHTML = '<div class="empty">Loading donations…</div>';
-  let query = supabase.from('donations').select('*').order('created_at', { ascending: false });
-  if (currentProfile.role === 'business') query = query.eq('business_id', currentUser.id);
-  else query = query.eq('status', 'available');
-  const { data, error } = await query;
-  if (error) throw error;
-  const donations = data || [];
+  let donations = [];
+  if (currentProfile.role === 'business') {
+    let query = supabase.from('donations').select('*').eq('business_id', currentUser.id).order('created_at', { ascending: false });
+    if (donationView === 'history') query = query.eq('status', 'collected');
+    const { data, error } = await query;
+    if (error) throw error;
+    donations = data || [];
+  } else if (donationView === 'history') {
+    const { data: myReservations, error: reservationError } = await supabase
+      .from('reservations')
+      .select('donation_id, status')
+      .eq('association_id', currentUser.id);
+    if (reservationError) throw reservationError;
+    const donationIds = [...new Set((myReservations || []).map(r => r.donation_id))];
+    if (donationIds.length) {
+      const { data, error } = await supabase.from('donations').select('*').in('id', donationIds).order('created_at', { ascending: false });
+      if (error) throw error;
+      donations = data || [];
+    }
+  } else {
+    const { data, error } = await supabase.from('donations').select('*').eq('status', 'available').order('created_at', { ascending: false });
+    if (error) throw error;
+    donations = data || [];
+  }
   let reservationsByDonation = {};
   if (currentProfile.role === 'business' && donations.length) {
     const { data: reservationRows, error: reservationError } = await supabase
@@ -222,6 +244,17 @@ async function loadDonations() {
     $('donations').append(card);
   });
 }
+
+$('current-view-btn').addEventListener('click', async () => {
+  donationView = 'current';
+  try { await loadDonations(); }
+  catch (err) { showMessage('app-message', err.message || 'Could not load donations.', true); }
+});
+$('history-view-btn').addEventListener('click', async () => {
+  donationView = 'history';
+  try { await loadDonations(); }
+  catch (err) { showMessage('app-message', err.message || 'Could not load donation history.', true); }
+});
 
 $('donation-form').addEventListener('submit', async e => {
   e.preventDefault();
