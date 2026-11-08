@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GiveEat — Web App</title>
+<meta name="description" content="GiveEat food donation platform for businesses and associations in Safi, Morocco.">
+<style>
+:root{font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;color:#1a2a1c;background:#f3f7ee;--green:#397d24;--orange:#e8671a;--line:#d9e2d2;--muted:#647064;--card:#fff}
+*{box-sizing:border-box}body{margin:0}button,input,select,textarea{font:inherit}button{cursor:pointer}
+header{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+.top{max-width:1180px;margin:auto;padding:15px 22px;display:flex;align-items:center;justify-content:space-between;gap:15px}
+.brand{font-weight:900;font-size:23px;color:var(--green);text-decoration:none}.brand span{color:var(--orange)}
+.role{border:1px solid var(--line);background:#f7faf4;border-radius:10px;padding:9px 12px;color:#263527}
+main{max-width:1180px;margin:30px auto;padding:0 22px}.welcome{display:flex;justify-content:space-between;align-items:end;gap:20px;flex-wrap:wrap;margin-bottom:24px}
+h1{font-size:clamp(27px,4vw,38px);margin:0 0 7px;letter-spacing:-1px}h2{font-size:20px;margin:0 0 16px}p{color:var(--muted);margin:0}
+.notice{background:#fff5e9;border:1px solid #f4d4b5;border-radius:12px;padding:12px 15px;margin-bottom:22px;color:#77401b;font-size:14px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:24px}.stat,.panel,.donation{background:var(--card);border:1px solid var(--line);border-radius:15px;padding:18px}
+.stat small{display:block;color:var(--muted);font-size:13px}.stat strong{display:block;font-size:27px;margin-top:5px}
+.layout{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(270px,.8fr);gap:18px}
+.donation-list{display:grid;gap:12px}.donation-head{display:flex;justify-content:space-between;gap:10px;align-items:start}.donation h3{margin:0 0 5px;font-size:17px}.meta{font-size:13px;color:var(--muted);line-height:1.7}
+.tag{display:inline-block;padding:5px 9px;border-radius:99px;background:#e9f3e2;color:#31651e;font-size:12px;font-weight:700;white-space:nowrap}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.btn{border:0;border-radius:9px;padding:10px 14px;background:var(--green);color:white;font-weight:650}.btn.orange{background:var(--orange)}.btn.light{background:#eef4e9;color:#294526}.btn:disabled{opacity:.5;cursor:not-allowed}
+form{display:grid;gap:11px}label{font-size:13px;font-weight:650;color:#425044}input,select,textarea{width:100%;padding:10px 11px;border:1px solid var(--line);border-radius:9px;background:#fff;color:#1a2a1c}textarea{min-height:76px;resize:vertical}
+.field{display:grid;gap:5px}.empty{padding:28px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:12px}
+footer{text-align:center;color:var(--muted);font-size:12px;padding:30px 15px}
+@media(max-width:760px){.layout{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}.top{align-items:flex-start;flex-direction:column}.role{width:100%}}
+</style>
+</head>
+<body>
+<header><div class="top"><a class="brand" href="../">Give<span>Eat</span></a><label>View as <select class="role" id="role"><option value="business">Food business</option><option value="association">Association</option><option value="admin">Administrator (demo)</option></select></label></div></header>
+<main>
+<div class="welcome"><div><h1 id="heading">Food business dashboard</h1><p id="subheading">Share safe surplus food with local associations in Safi.</p></div><span class="tag">Safi, Morocco</span></div>
+<div class="notice"><strong>Preview version:</strong> this first version stores demo activity in this browser only. Accounts, shared live data, secure sign-in, notifications and production hosting still need a backend connection before public use.</div>
+<section class="stats" aria-label="Impact summary">
+<div class="stat"><small>Available donations</small><strong id="available">3</strong></div>
+<div class="stat"><small>Reserved donations</small><strong id="reserved">0</strong></div>
+<div class="stat"><small>Collected donations</small><strong id="collected">0</strong></div>
+</section>
+<div class="layout">
+<section class="panel"><div class="donation-head"><h2 id="list-title">Recent food donations</h2><span class="meta" id="count-label"></span></div><div class="donation-list" id="donations"></div></section>
+<aside class="panel" id="side-panel"><h2 id="form-title">Publish a donation</h2><form id="donation-form">
+<div class="field"><label for="food">Food description</label><input id="food" required maxlength="80" placeholder="e.g. Fresh bread and pastries"></div>
+<div class="field"><label for="quantity">Quantity / portions</label><input id="quantity" required maxlength="40" placeholder="e.g. 20 portions"></div>
+<div class="field"><label for="pickup">Pickup deadline</label><input id="pickup" type="datetime-local" required></div>
+<div class="field"><label for="business">Business name</label><input id="business" required maxlength="60" placeholder="Your restaurant or shop"></div>
+<div class="field"><label for="notes">Notes (optional)</label><textarea id="notes" maxlength="240" placeholder="Storage, allergens, pickup instructions…"></textarea></div>
+<button class="btn orange" type="submit">Publish donation</button>
+</form><div id="side-info" hidden></div></aside>
+</div>
+</main>
+<footer>GiveEat · Reducing food waste and supporting solidarity in Safi.</footer>
+<script>
+const initial=[
+{id:1,food:"Fresh bread and pastries",quantity:"12 bags",business:"Demo Bakery",pickup:"Today · 18:00",status:"Available",notes:"Collected before closing"},
+{id:2,food:"Cooked lunch meals",quantity:"20 portions",business:"Demo Restaurant",pickup:"Today · 16:30",status:"Available",notes:"Keep refrigerated"},
+{id:3,food:"Seasonal fruit and vegetables",quantity:"3 crates",business:"Demo Market",pickup:"Tomorrow · 10:00",status:"Available",notes:"Good condition"}
+];
+let items;try{items=JSON.parse(localStorage.getItem("giveeat-demo-donations"))||initial}catch(e){items=initial}
+const $=id=>document.getElementById(id);
+function save(){try{localStorage.setItem("giveeat-demo-donations",JSON.stringify(items))}catch(e){}}
+function render(){
+const role=$("role").value;
+$("heading").textContent=role==="business"?"Food business dashboard":role==="association"?"Association dashboard":"Administrator overview";
+$("subheading").textContent=role==="business"?"Share safe surplus food with local associations in Safi.":role==="association"?"Find available food donations and reserve a pickup.":"Review donation activity in this local preview.";
+$("list-title").textContent=role==="business"?"Your donation board":"Available food donations";
+$("form-title").textContent=role==="business"?"Publish a donation":"Donation activity";
+$("donation-form").hidden=role!=="business";
+$("side-info").hidden=role==="business";
+$("side-info").textContent=role==="association"?"Select an available donation and reserve it for collection.": "Administrator controls and user management will be added when the secure backend is connected.";
+$("side-info").style.color="#647064";
+$("available").textContent=items.filter(x=>x.status==="Available").length;
+$("reserved").textContent=items.filter(x=>x.status==="Reserved").length;
+$("collected").textContent=items.filter(x=>x.status==="Collected").length;
+$("count-label").textContent=items.length+" total";
+const visible=role==="business"?items:items.filter(x=>x.status==="Available"||role==="admin");
+$("donations").innerHTML="";
+if(!visible.length){$("donations").innerHTML='<div class="empty">No donations to display yet.</div>';return}
+visible.forEach(x=>{
+const card=document.createElement("article");card.className="donation";
+const head=document.createElement("div");head.className="donation-head";
+const left=document.createElement("div");const h=document.createElement("h3");h.textContent=x.food;const meta=document.createElement("div");meta.className="meta";meta.textContent=x.business+" · "+x.quantity+" · Pickup: "+x.pickup;left.append(h,meta);
+const tag=document.createElement("span");tag.className="tag";tag.textContent=x.status;head.append(left,tag);card.append(head);
+if(x.notes){const n=document.createElement("p");n.className="meta";n.style.marginTop="8px";n.textContent=x.notes;card.append(n)}
+const actions=document.createElement("div");actions.className="actions";
+if(role==="association"&&x.status==="Available"){const b=document.createElement("button");b.className="btn";b.textContent="Reserve pickup";b.onclick=()=>{x.status="Reserved";save();render()};actions.append(b)}
+if(role==="business"&&x.status==="Available"){const b=document.createElement("button");b.className="btn light";b.textContent="Mark collected";b.onclick=()=>{x.status="Collected";save();render()};actions.append(b)}
+if(role==="admin"){const b=document.createElement("button");b.className="btn light";b.textContent="Reset status";b.onclick=()=>{x.status="Available";save();render()};actions.append(b)}
+if(actions.children.length)card.append(actions);$("donations").append(card);
+});
+}
+$("role").addEventListener("change",render);
+$("donation-form").addEventListener("submit",e=>{
+e.preventDefault();const date=new Date($("pickup").value);const pickup=Number.isNaN(date.getTime())?"To be confirmed":date.toLocaleString();
+items.unshift({id:Date.now(),food:$("food").value.trim(),quantity:$("quantity").value.trim(),business:$("business").value.trim(),pickup,status:"Available",notes:$("notes").value.trim()});
+save();e.target.reset();render();
+});
+render();
+</script>
+</body></html>
